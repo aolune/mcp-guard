@@ -1,0 +1,3 @@
+fail_on: medium
+ignore_finding_ids:
+  - MCG-TOOL-003
