@@ -10,17 +10,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v3
-      - run: uv sync || pip install -e ".[dev]"
-      - run: uv run ruff check .
-      - run: uv run pytest
+      - run: uv sync --extra dev || pip install -e ".[dev]"
+      - run: uv run --extra dev ruff check .
+      - run: uv run --extra dev pytest
 
   security-gate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v3
-      - run: uv sync || pip install -e ".[dev]"
-      - run: uv run python -m mcp_guard scan examples/dangerous_stdio_config.json --format json --fail-on high > mcp-guard-report.json
+      - run: uv sync --extra dev || pip install -e ".[dev]"
+      - run: uv run python -m mcp_guard scan examples/safe_mcp_config.json --format json --fail-on high > mcp-guard-report.json
       - run: uv run python -m mcp_guard scan examples/poisoned_tool_manifest.json --format sarif > mcp-guard-report.sarif
       - uses: actions/upload-artifact@v4
         if: always()

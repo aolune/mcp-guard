@@ -1,16 +1,32 @@
 from __future__ import annotations
+
 import json
 from pathlib import Path
 from typing import Any
+
 import yaml
 
 
+class ParseError(ValueError):
+    pass
+
+
 def load_documents(path: Path) -> list[tuple[Path, dict[str, Any]]]:
-    files = [path] if path.is_file() else [p for p in path.rglob("*") if p.suffix.lower() in {".json", ".yaml", ".yml"}]
+    if not path.exists():
+        raise ParseError(f"Scan path does not exist: {path}")
+
+    files = (
+        [path]
+        if path.is_file()
+        else [p for p in path.rglob("*") if p.suffix.lower() in {".json", ".yaml", ".yml"}]
+    )
     docs = []
     for file in files:
         text = file.read_text(encoding="utf-8")
-        data = json.loads(text) if file.suffix.lower() == ".json" else yaml.safe_load(text)
+        try:
+            data = json.loads(text) if file.suffix.lower() == ".json" else yaml.safe_load(text)
+        except (json.JSONDecodeError, yaml.YAMLError) as exc:
+            raise ParseError(f"Failed to parse {file}: {exc}") from exc
         if isinstance(data, dict):
             docs.append((file, data))
     return docs

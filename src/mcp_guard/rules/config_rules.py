@@ -4,7 +4,7 @@ import re
 from urllib.parse import urlparse
 
 from mcp_guard.models import Finding
-from mcp_guard.redaction import redact_secret_value
+from mcp_guard.redaction import redact_secret_value, redact_text
 
 SHELLS = {"bash", "sh", "powershell", "cmd"}
 DANGEROUS_ARGS = [
@@ -61,7 +61,7 @@ def scan_server(name: str, server: dict, path: str) -> list[Finding]:
                 severity="high",
                 category="config",
                 location=f"{path}.mcpServers.{name}.command",
-                evidence=cmd,
+                evidence=redact_text(cmd),
                 reason="Shell interpreter launcher detected.",
                 recommendation="Use fixed binary command with allowlist and sandbox.",
                 risk_level="L4",
@@ -78,7 +78,7 @@ def scan_server(name: str, server: dict, path: str) -> list[Finding]:
                 severity="medium",
                 category="config",
                 location=f"{path}.mcpServers.{name}.args",
-                evidence=joined,
+                evidence=redact_text(joined),
                 reason="Potentially dangerous command pattern in args.",
                 recommendation="Review arg intent and restrict egress/filesystem actions.",
                 risk_level="L3",
@@ -115,7 +115,7 @@ def scan_server(name: str, server: dict, path: str) -> list[Finding]:
                 severity="medium",
                 category="config",
                 location=f"{path}.mcpServers.{name}.url",
-                evidence=url,
+                evidence=redact_text(url),
                 reason="Remote MCP URL is not HTTPS.",
                 recommendation="Enforce HTTPS and certificate validation.",
                 risk_level="L3",
@@ -135,7 +135,7 @@ def scan_server(name: str, server: dict, path: str) -> list[Finding]:
                 severity="high",
                 category="config",
                 location=f"{path}.mcpServers.{name}.url",
-                evidence=url,
+                evidence=redact_text(url),
                 reason="URL points to private/local/metadata endpoint.",
                 recommendation="Block private/metadata endpoints unless explicitly approved.",
                 risk_level="L4",

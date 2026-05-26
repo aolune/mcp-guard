@@ -1,3 +1,0 @@
-GitHub push test.
-
-Created by Codex on 2026-05-25 to verify repository push access.
