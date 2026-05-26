@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import Any
 
 from mcp_guard.models import Finding, ToolDefinition
+from mcp_guard.redaction import redact_text
 from mcp_guard.rules.text_patterns import PATTERN_GROUPS
 
 
@@ -16,21 +17,19 @@ def _walk(schema: Any, path: str):
             yield from _walk(v, f"{path}[{i}]")
 
 
-def scan_tool(tool: ToolDefinition, base_loc: str) -> list[Finding]:
-    findings: list[Finding] = []
-    text = (tool.name + " " + tool.description).lower()
-
+def _scan_text_patterns(findings: list[Finding], text: str, location: str) -> None:
+    lowered = text.lower()
     for fid, pats in PATTERN_GROUPS.items():
         for p in pats:
-            if p.lower() in text:
+            if p.lower() in lowered:
                 findings.append(
                     Finding(
                         id=fid,
                         title="tool metadata pattern detected",
                         severity="high" if fid != "MCG-TOOL-003" else "medium",
                         category="tool",
-                        location=f"{base_loc}.{tool.name}",
-                        evidence=p,
+                        location=location,
+                        evidence=redact_text(p),
                         reason="Suspicious instruction-like content in tool metadata.",
                         recommendation="Manually review and block malicious tool metadata.",
                         risk_level="L3",
@@ -39,9 +38,20 @@ def scan_tool(tool: ToolDefinition, base_loc: str) -> list[Finding]:
                 )
                 break
 
+
+def scan_tool(tool: ToolDefinition, base_loc: str) -> list[Finding]:
+    findings: list[Finding] = []
+    _scan_text_patterns(findings, tool.name, f"{base_loc}.{tool.name}.name")
+    _scan_text_patterns(findings, tool.description, f"{base_loc}.{tool.name}.description")
+
     for loc, node in _walk(tool.inputSchema, f"{base_loc}.{tool.name}.inputSchema"):
         if not isinstance(node, dict):
             continue
+        for k in ("name", "description", "title"):
+            v = node.get(k)
+            if isinstance(v, str):
+                _scan_text_patterns(findings, v, f"{loc}.{k}")
+
         joined = " ".join(str(node.get(k, "")) for k in ("name", "description", "title")).lower()
 
         if any(x in joined for x in ["file path", "filepath", "path"]):
@@ -52,7 +62,7 @@ def scan_tool(tool: ToolDefinition, base_loc: str) -> list[Finding]:
                     severity="high",
                     category="schema",
                     location=loc,
-                    evidence=joined[:120],
+                    evidence=redact_text(joined[:120]),
                     reason="Schema appears to accept arbitrary file path input.",
                     recommendation="Apply path allowlist and sandbox filesystem access.",
                     risk_level="L4",
@@ -67,7 +77,7 @@ def scan_tool(tool: ToolDefinition, base_loc: str) -> list[Finding]:
                     severity="medium",
                     category="schema",
                     location=loc,
-                    evidence=joined[:120],
+                    evidence=redact_text(joined[:120]),
                     reason="Schema accepts potentially unbounded URL input.",
                     recommendation="Enforce URL allowlist and egress control.",
                     risk_level="L3",
@@ -82,7 +92,7 @@ def scan_tool(tool: ToolDefinition, base_loc: str) -> list[Finding]:
                     severity="high",
                     category="schema",
                     location=loc,
-                    evidence=joined[:120],
+                    evidence=redact_text(joined[:120]),
                     reason="Schema may allow code/command execution semantics.",
                     recommendation="Disallow generic command fields and require explicit safe operations.",
                     risk_level="L4",
