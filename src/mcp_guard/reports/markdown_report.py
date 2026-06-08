@@ -56,6 +56,7 @@ def render_markdown(result: ScanResult) -> str:
             f"Risk score: {finding.risk_score} / 100",
             f"Policy action: {finding.policy_action}",
             f"Confidence: {finding.confidence:.2f}",
+            f"OWASP MCP: {', '.join(finding.owasp) if finding.owasp else 'n/a'}",
             f"Location: {finding.location}",
             f"Evidence: {finding.evidence}",
             "",

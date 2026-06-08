@@ -109,6 +109,40 @@ require_approval_levels:
   - L4
 ```
 
+## GitHub Actions and SARIF
+
+The included CI workflow runs tests, lints the project, generates JSON/SARIF mcp-guard reports, uploads the reports as artifacts, and uploads SARIF to GitHub Code Scanning when repository permissions allow it.
+
+Minimal workflow step:
+
+```yaml
+- run: python -m mcp_guard scan examples/poisoned_tool_manifest.json --format sarif --out mcp-guard-report.sarif
+- uses: github/codeql-action/upload-sarif@v4
+  with:
+    sarif_file: mcp-guard-report.sarif
+    category: mcp-guard
+```
+
+For CI admission gates:
+
+```powershell
+python -m mcp_guard scan . --policy examples/policy_example.yaml --fail-on high
+```
+
+## OWASP MCP mapping
+
+mcp-guard findings include an `owasp` field and SARIF `tags` so reports can be grouped by MCP security themes.
+
+| Rule family | Mapping |
+| --- | --- |
+| `MCPG-STDIO-*` | Command Injection, Supply Chain |
+| `MCPG-SECRET-*` | Token Mismanagement, Context Over-Sharing |
+| `MCPG-CAP-*` | Scope Creep |
+| `MCPG-SCHEMA-*` | Scope Creep, Intent Flow Subversion |
+| `MCPG-INJ-*` | Tool Poisoning, Context Injection |
+| `MCPG-SC-*` | Supply Chain, Tool Poisoning |
+| `MCPG-NET-*` | Intent Flow Subversion, Context Over-Sharing |
+
 ## Non-goals
 
 mcp-guard is not:

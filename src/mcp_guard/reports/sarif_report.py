@@ -15,6 +15,7 @@ LEVEL_MAP = {
 
 
 def _sarif_result(scan: ScanResult, finding) -> dict[str, Any]:
+    uri = scan.target.replace("\\", "/")
     return {
         "ruleId": finding.id,
         "level": LEVEL_MAP.get(finding.severity, "warning"),
@@ -27,7 +28,7 @@ def _sarif_result(scan: ScanResult, finding) -> dict[str, Any]:
         "locations": [
             {
                 "physicalLocation": {
-                    "artifactLocation": {"uri": scan.target},
+                    "artifactLocation": {"uri": uri},
                     "region": {"snippet": {"text": finding.location}},
                 }
             }
@@ -40,6 +41,7 @@ def _sarif_result(scan: ScanResult, finding) -> dict[str, Any]:
             "risk_level": finding.risk_level,
             "policy_action": finding.policy_action,
             "confidence": finding.confidence,
+            "tags": finding.owasp,
         },
     }
 
@@ -58,7 +60,11 @@ def render_sarif(result: ScanResult) -> str:
                 "shortDescription": {"text": finding.title},
                 "fullDescription": {"text": finding.reason},
                 "help": {"text": finding.recommendation},
-                "properties": {"category": finding.category, "risk_level": finding.risk_level},
+                "properties": {
+                    "category": finding.category,
+                    "risk_level": finding.risk_level,
+                    "tags": finding.owasp,
+                },
             }
         )
 

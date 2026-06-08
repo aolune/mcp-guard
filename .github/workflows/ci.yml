@@ -4,6 +4,9 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -16,12 +19,21 @@ jobs:
 
   security-gate:
     runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v3
       - run: uv sync --extra dev || pip install -e ".[dev]"
-      - run: uv run python -m mcp_guard scan examples/safe_mcp_config.json --format json --fail-on high > mcp-guard-report.json
-      - run: uv run python -m mcp_guard scan examples/poisoned_tool_manifest.json --format sarif > mcp-guard-report.sarif
+      - run: uv run python -m mcp_guard scan examples/safe_mcp_config.json --format json --fail-on high --out mcp-guard-report.json
+      - run: uv run python -m mcp_guard scan examples/poisoned_tool_manifest.json --format sarif --out mcp-guard-report.sarif
+      - uses: github/codeql-action/upload-sarif@v4
+        if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+        with:
+          sarif_file: mcp-guard-report.sarif
+          category: mcp-guard-demo
       - uses: actions/upload-artifact@v4
         if: always()
         with:

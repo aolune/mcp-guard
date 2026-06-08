@@ -29,6 +29,7 @@ class Finding(BaseModel):
     risk_level: RiskLevel
     policy_action: PolicyAction = "allow_with_constraints"
     confidence: float = Field(ge=0, le=1)
+    owasp: list[str] = Field(default_factory=list)
 
 
 class ToolDefinition(BaseModel):

@@ -8,12 +8,15 @@ def test_reports():
     assert "mcp-guard Report" in markdown
     assert "Risk score:" in markdown
     assert "Recommended policy" in markdown
+    assert "OWASP MCP:" in markdown
     json_report = render_json(r)
     assert '"findings"' in json_report
     assert '"recommended_policy"' in json_report
+    assert '"owasp"' in json_report
     sarif = render_sarif(r)
     assert '"version": "2.1.0"' in sarif
     assert '"ruleId": "MCPG-INJ-001"' in sarif
+    assert '"tags"' in sarif
 
 
 def test_secret_values_are_masked():
