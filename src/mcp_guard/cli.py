@@ -1,23 +1,25 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import typer
 
 from mcp_guard.diff import diff_tools
 from mcp_guard.hashing import canonical_hash
 from mcp_guard.models import ScanResult
+from mcp_guard.policy import apply_policy, load_policy, policy_fail_on, render_default_policy, should_fail
 from mcp_guard.reports import render_json, render_markdown, render_sarif
 from mcp_guard.scanner import scan_path
-from mcp_guard.policy import apply_policy, load_policy, policy_fail_on, should_fail
 from mcp_guard.summary import build_summary
 
 app = typer.Typer(help="mcp-guard static security scanner")
-sev_rank = {"info": 0, "low": 1, "medium": 2, "high": 3, "critical": 4}
 
 
 @app.command()
 def scan(
     path: str,
     format: str = typer.Option("markdown", "--format"),
+    output_path: str | None = typer.Option(None, "--out"),
     fail_on: str | None = typer.Option(None, "--fail-on"),
     policy: str | None = typer.Option(None, "--policy"),
 ):
@@ -26,12 +28,15 @@ def scan(
     result.findings = apply_policy(result.findings, loaded_policy)
     result.summary = build_summary(result.findings)
     if format == "json":
-        out = render_json(result)
+        rendered = render_json(result)
     elif format == "sarif":
-        out = render_sarif(result)
+        rendered = render_sarif(result)
     else:
-        out = render_markdown(result)
-    typer.echo(out)
+        rendered = render_markdown(result)
+    if output_path:
+        Path(output_path).write_text(rendered, encoding="utf-8")
+    else:
+        typer.echo(rendered)
     effective_fail_on = policy_fail_on(fail_on, loaded_policy)
     if should_fail(result.summary.max_severity, effective_fail_on):
         raise typer.Exit(1)
@@ -47,3 +52,14 @@ def diff(baseline: str, current: str):
     findings = diff_tools(baseline, current)
     result = ScanResult(target=f"{baseline} -> {current}", findings=findings, summary=build_summary(findings))
     typer.echo(render_markdown(result))
+
+
+@app.command("init-policy")
+def init_policy(
+    out: str | None = typer.Option(None, "--out"),
+):
+    policy_text = render_default_policy()
+    if out:
+        Path(out).write_text(policy_text, encoding="utf-8")
+    else:
+        typer.echo(policy_text)

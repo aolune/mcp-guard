@@ -23,15 +23,18 @@ def diff_tools(base: str, current: str) -> list[Finding]:
     for n in sorted(current_tools.keys() - baseline_tools.keys()):
         findings.append(
             Finding(
-                id="MCG-RUG-002",
+                id="MCPG-SC-003",
                 title="tool added",
                 severity="medium",
-                category="rugpull",
+                category="supply_chain",
+                capability="supply_chain",
                 location=n,
                 evidence=n,
                 reason="New tool was introduced after baseline.",
                 recommendation="Re-run approval workflow for newly added tools.",
+                risk_score=45,
                 risk_level="L3",
+                policy_action="require_approval",
                 confidence=0.9,
             )
         )
@@ -39,15 +42,18 @@ def diff_tools(base: str, current: str) -> list[Finding]:
     for n in sorted(baseline_tools.keys() - current_tools.keys()):
         findings.append(
             Finding(
-                id="MCG-RUG-003",
+                id="MCPG-SC-004",
                 title="tool removed",
                 severity="low",
-                category="rugpull",
+                category="supply_chain",
+                capability="supply_chain",
                 location=n,
                 evidence=n,
                 reason="Existing tool removed from current manifest.",
                 recommendation="Review removal impact and trust chain.",
+                risk_score=15,
                 risk_level="L1",
+                policy_action="allow",
                 confidence=0.9,
             )
         )
@@ -56,15 +62,18 @@ def diff_tools(base: str, current: str) -> list[Finding]:
         if baseline_tools[n].model_dump() != current_tools[n].model_dump():
             findings.append(
                 Finding(
-                    id="MCG-RUG-001",
+                    id="MCPG-SC-002",
                     title="tool definition hash changed",
                     severity="high",
-                    category="rugpull",
+                    category="supply_chain",
+                    capability="supply_chain",
                     location=n,
                     evidence=n,
                     reason="Tool schema/description changed compared to baseline.",
                     recommendation="Treat as potential rug pull and require security re-review.",
+                    risk_score=65,
                     risk_level="L4",
+                    policy_action="require_approval",
                     confidence=0.95,
                 )
             )

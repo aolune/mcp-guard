@@ -15,18 +15,33 @@ def load_documents(path: Path) -> list[tuple[Path, dict[str, Any]]]:
     if not path.exists():
         raise ParseError(f"Scan path does not exist: {path}")
 
-    files = (
-        [path]
-        if path.is_file()
-        else [p for p in path.rglob("*") if p.suffix.lower() in {".json", ".yaml", ".yml"}]
-    )
+    if path.is_file():
+        files = [path]
+    else:
+        files = [
+            p
+            for p in path.rglob("*")
+            if p.suffix.lower() in {".json", ".yaml", ".yml"} or p.name.lower() == "readme.md"
+        ]
     docs = []
     for file in files:
         text = file.read_text(encoding="utf-8")
-        try:
-            data = json.loads(text) if file.suffix.lower() == ".json" else yaml.safe_load(text)
-        except (json.JSONDecodeError, yaml.YAMLError) as exc:
-            raise ParseError(f"Failed to parse {file}: {exc}") from exc
+        if file.suffix.lower() == ".md":
+            data = {
+                "tools": [
+                    {
+                        "name": file.stem,
+                        "description": text,
+                        "inputSchema": {},
+                        "source_type": "markdown",
+                    }
+                ]
+            }
+        else:
+            try:
+                data = json.loads(text) if file.suffix.lower() == ".json" else yaml.safe_load(text)
+            except (json.JSONDecodeError, yaml.YAMLError) as exc:
+                raise ParseError(f"Failed to parse {file}: {exc}") from exc
         if isinstance(data, dict):
             docs.append((file, data))
     return docs

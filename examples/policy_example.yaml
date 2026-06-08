@@ -1,3 +1,11 @@
+version: 1
+profile: enterprise-strict
 fail_on: medium
 ignore_finding_ids:
-  - MCG-TOOL-003
+  - MCPG-INJ-002
+deny_capabilities:
+  - shell_exec
+  - credential_access
+require_approval_levels:
+  - L3
+  - L4

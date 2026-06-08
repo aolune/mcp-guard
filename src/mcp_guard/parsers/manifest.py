@@ -1,5 +1,7 @@
 from __future__ import annotations
+
 from typing import Any
+
 from mcp_guard.models import ToolDefinition
 
 
@@ -10,5 +12,16 @@ def extract_tools(data: dict[str, Any]) -> list[ToolDefinition]:
     out = []
     for item in raw:
         if isinstance(item, dict) and item.get("name"):
-            out.append(ToolDefinition(name=str(item["name"]), description=str(item.get("description", "")), inputSchema=item.get("inputSchema", {}) or {}))
+            schema = item.get("inputSchema", item.get("input_schema", {})) or {}
+            source_type = str(item.get("source_type", "manifest"))
+            if source_type not in {"manifest", "markdown"}:
+                source_type = "manifest"
+            out.append(
+                ToolDefinition(
+                    name=str(item["name"]),
+                    description=str(item.get("description", "")),
+                    inputSchema=schema,
+                    source_type=source_type,
+                )
+            )
     return out

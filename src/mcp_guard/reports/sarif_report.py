@@ -34,8 +34,11 @@ def _sarif_result(scan: ScanResult, finding) -> dict[str, Any]:
         ],
         "properties": {
             "category": finding.category,
+            "capability": finding.capability,
             "evidence": finding.evidence,
+            "risk_score": finding.risk_score,
             "risk_level": finding.risk_level,
+            "policy_action": finding.policy_action,
             "confidence": finding.confidence,
         },
     }
@@ -72,7 +75,9 @@ def render_sarif(result: ScanResult) -> str:
                         "properties": {
                             "gate_result": result.summary.gate_result,
                             "max_severity": result.summary.max_severity,
+                            "risk_score": result.summary.risk_score,
                             "tool_risk_level": result.summary.tool_risk_level,
+                            "recommended_policy": result.summary.recommended_policy.model_dump(),
                         },
                     }
                 ],

@@ -1,8 +1,67 @@
+from __future__ import annotations
+
 from mcp_guard.models import ScanResult
 
+
+def _yes_no(value: bool) -> str:
+    return "yes" if value else "no"
+
+
 def render_markdown(result: ScanResult) -> str:
-    s=result.summary
-    lines=["# mcp-guard Report", "", f"Target: {result.target}", f"Gate: {s.gate_result.upper()}", f"Max severity: {s.max_severity.upper()}", f"Tool risk level: {s.tool_risk_level}", "", "## Summary", "", f"- Findings: {s.total_findings}", f"- Approval required: {'yes' if s.approval_required else 'no'}", f"- Sandbox required: {'yes' if s.sandbox_required else 'no'}", f"- Egress review required: {'yes' if s.egress_review_required else 'no'}", f"- Credential review required: {'yes' if s.credential_review_required else 'no'}", "", "## Findings", ""]
-    for f in result.findings:
-        lines += [f"### {f.id} {f.title}", "", f"Severity: {f.severity.upper()}", f"Risk level: {f.risk_level}", f"Location: {f.location}", f"Evidence: {f.evidence}", f"Reason: {f.reason}", f"Recommendation: {f.recommendation}", ""]
+    summary = result.summary
+    policy = summary.recommended_policy
+    lines = [
+        "# mcp-guard Report",
+        "",
+        f"Target: {result.target}",
+        f"Gate: {summary.gate_result.upper()}",
+        f"Max severity: {summary.max_severity.upper()}",
+        f"Risk level: {summary.tool_risk_level}",
+        f"Risk score: {summary.risk_score} / 100",
+        "",
+        "## Recommended policy",
+        "",
+        f"- Action: {policy.action}",
+        f"- Require approval: {_yes_no(policy.require_approval)}",
+        f"- Sandbox: {_yes_no(policy.sandbox)}",
+        f"- Network: {policy.network}",
+        "",
+        "## Summary",
+        "",
+        f"- Findings: {summary.total_findings}",
+        f"- Approval required: {_yes_no(summary.approval_required)}",
+        f"- Sandbox required: {_yes_no(summary.sandbox_required)}",
+        f"- Egress review required: {_yes_no(summary.egress_review_required)}",
+        f"- Credential review required: {_yes_no(summary.credential_review_required)}",
+        "",
+    ]
+    if policy.notes:
+        lines.append("## Policy notes")
+        lines.append("")
+        lines.extend(f"- {note}" for note in policy.notes)
+        lines.append("")
+
+    lines.extend(["## Findings", ""])
+    if not result.findings:
+        lines.extend(["No findings.", ""])
+        return "\n".join(lines)
+
+    for finding in result.findings:
+        lines += [
+            f"### {finding.id} {finding.title}",
+            "",
+            f"Severity: {finding.severity.upper()}",
+            f"Capability: {finding.capability}",
+            f"Risk level: {finding.risk_level}",
+            f"Risk score: {finding.risk_score} / 100",
+            f"Policy action: {finding.policy_action}",
+            f"Confidence: {finding.confidence:.2f}",
+            f"Location: {finding.location}",
+            f"Evidence: {finding.evidence}",
+            "",
+            f"Reason: {finding.reason}",
+            "",
+            f"Recommendation: {finding.recommendation}",
+            "",
+        ]
     return "\n".join(lines)
