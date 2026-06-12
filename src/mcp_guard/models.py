@@ -4,6 +4,10 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
+from mcp_guard import __version__
+
+REPORT_SCHEMA_VERSION = "mcp-guard.report.v1"
+
 Severity = Literal["info", "low", "medium", "high", "critical"]
 RiskLevel = Literal["L0", "L1", "L2", "L3", "L4"]
 PolicyAction = Literal[
@@ -61,6 +65,8 @@ class ScanSummary(BaseModel):
 
 
 class ScanResult(BaseModel):
+    schema_version: Literal["mcp-guard.report.v1"] = REPORT_SCHEMA_VERSION
+    tool_version: str = __version__
     target: str
     findings: list[Finding]
     summary: ScanSummary

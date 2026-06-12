@@ -161,6 +161,7 @@ The baseline stores hashes for descriptions, schemas, server launch definitions,
 ## OWASP MCP mapping
 
 mcp-guard findings include an `owasp` field and SARIF `tags` so reports can be grouped by MCP security themes.
+JSON and SARIF reports also include `schema_version` / `report_schema_version` and `tool_version` metadata for stable downstream parsing.
 
 | Rule family | Mapping |
 | --- | --- |

@@ -73,12 +73,21 @@ def render_sarif(result: ScanResult) -> str:
         "version": "2.1.0",
         "runs": [
             {
-                "tool": {"driver": {"name": "mcp-guard", "rules": rules}},
+                "tool": {
+                    "driver": {
+                        "name": "mcp-guard",
+                        "semanticVersion": result.tool_version,
+                        "rules": rules,
+                        "properties": {"report_schema_version": result.schema_version},
+                    }
+                },
                 "results": [_sarif_result(result, f) for f in result.findings],
                 "invocations": [
                     {
                         "executionSuccessful": True,
                         "properties": {
+                            "report_schema_version": result.schema_version,
+                            "tool_version": result.tool_version,
                             "gate_result": result.summary.gate_result,
                             "max_severity": result.summary.max_severity,
                             "risk_score": result.summary.risk_score,
