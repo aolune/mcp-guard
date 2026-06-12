@@ -8,6 +8,7 @@ def test_reports():
     r = scan_path("examples/poisoned_tool_manifest.json")
     markdown = render_markdown(r)
     assert "mcp-guard Report" in markdown
+    assert "Gate:" in markdown
     assert "Risk score:" in markdown
     assert "Recommended policy" in markdown
     assert "OWASP MCP:" in markdown
@@ -35,3 +36,4 @@ def test_secret_values_are_masked():
     assert "ghp_exampletoken123456" not in report
     assert "gh***56" in report
     assert "ghp_exampletoken123456" not in render_json(r)
+    assert "ghp_exampletoken123456" not in render_sarif(r)
