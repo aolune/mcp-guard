@@ -1,4 +1,14 @@
+from mcp_guard.rules.catalog import all_rules
 from mcp_guard.scanner import scan_path
+
+ALLOWED_RULE_CATEGORIES = {
+    "stdio",
+    "secret",
+    "capability",
+    "schema",
+    "injection",
+    "supply_chain",
+}
 
 
 def test_rules_fire():
@@ -34,3 +44,13 @@ def test_safe_readonly_fixture_passes():
     result = scan_path("examples/safe_readonly_docs_manifest.json")
     assert result.summary.gate_result == "pass"
     assert result.summary.recommended_policy.action == "allow"
+
+
+def test_rule_catalog_uses_planned_taxonomy():
+    assert {rule["category"] for rule in all_rules()} <= ALLOWED_RULE_CATEGORIES
+
+
+def test_network_config_findings_use_supply_chain_category():
+    result = scan_path("examples/dangerous_stdio_config.json")
+    network_categories = {finding.category for finding in result.findings if finding.id.startswith("MCPG-NET-")}
+    assert network_categories == {"supply_chain"}

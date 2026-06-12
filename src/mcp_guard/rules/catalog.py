@@ -59,7 +59,7 @@ _STATIC_RULES: dict[str, dict[str, Any]] = {
     },
     "MCPG-NET-001": {
         "title": "non-https remote MCP url",
-        "category": "config",
+        "category": "supply_chain",
         "capability": "network_fetch",
         "severity": "medium",
         "risk_level": "L2",
@@ -69,7 +69,7 @@ _STATIC_RULES: dict[str, dict[str, Any]] = {
     },
     "MCPG-NET-002": {
         "title": "localhost/private/metadata MCP url",
-        "category": "config",
+        "category": "supply_chain",
         "capability": "network_fetch",
         "severity": "high",
         "risk_level": "L4",
