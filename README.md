@@ -122,7 +122,7 @@ require_approval_levels:
 
 ## GitHub Actions and SARIF
 
-The included CI workflow runs tests, lints the project, generates JSON/SARIF mcp-guard reports, uploads the reports as artifacts, and uploads SARIF to GitHub Code Scanning when repository permissions allow it.
+The included CI workflow runs tests, lints the project, generates JSON/SARIF mcp-guard reports, runs the fixture benchmark matrix, uploads the reports as artifacts, and uploads SARIF to GitHub Code Scanning when repository permissions allow it.
 
 Minimal workflow step:
 

@@ -29,6 +29,8 @@ jobs:
       - run: uv sync --extra dev || pip install -e ".[dev]"
       - run: uv run python -m mcp_guard scan examples/safe_mcp_config.json --format json --fail-on high --out mcp-guard-report.json
       - run: uv run python -m mcp_guard scan examples/poisoned_tool_manifest.json --format sarif --out mcp-guard-report.sarif
+      - run: uv run python -m mcp_guard benchmark examples/fixture_matrix.yaml --format json --out mcp-guard-benchmark.json
+      - run: uv run python -m mcp_guard benchmark examples/fixture_matrix.yaml --out mcp-guard-benchmark.md
       - uses: github/codeql-action/upload-sarif@v4
         if: always() && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
         with:
@@ -41,3 +43,5 @@ jobs:
           path: |
             mcp-guard-report.json
             mcp-guard-report.sarif
+            mcp-guard-benchmark.json
+            mcp-guard-benchmark.md
