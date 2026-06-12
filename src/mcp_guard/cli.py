@@ -12,7 +12,14 @@ from mcp_guard.benchmark import (
 from mcp_guard.diff import diff_tools
 from mcp_guard.hashing import canonical_hash, render_baseline
 from mcp_guard.models import ScanResult
-from mcp_guard.policy import apply_policy, load_policy, policy_fail_on, render_default_policy, should_fail
+from mcp_guard.policy import (
+    PolicyError,
+    apply_policy,
+    load_policy,
+    policy_fail_on,
+    render_default_policy,
+    should_fail,
+)
 from mcp_guard.reports import render_json, render_markdown, render_sarif
 from mcp_guard.rules.catalog import all_rules, get_rule, render_rules_json, render_rules_markdown
 from mcp_guard.scanner import scan_path
@@ -47,6 +54,11 @@ def _write_or_echo(rendered: str, out: str | None) -> None:
         typer.echo(rendered)
 
 
+def _fail_policy_error(error: PolicyError) -> None:
+    typer.echo(f"Policy error: {error}", err=True)
+    raise typer.Exit(2)
+
+
 @app.command()
 def scan(
     path: str,
@@ -55,13 +67,20 @@ def scan(
     fail_on: str | None = typer.Option(None, "--fail-on"),
     policy: str | None = typer.Option(None, "--policy"),
 ):
+    try:
+        loaded_policy = load_policy(policy)
+        effective_fail_on = policy_fail_on(fail_on, loaded_policy)
+    except PolicyError as error:
+        _fail_policy_error(error)
+
     result = scan_path(path)
-    loaded_policy = load_policy(policy)
-    result.findings = apply_policy(result.findings, loaded_policy)
+    try:
+        result.findings = apply_policy(result.findings, loaded_policy)
+    except PolicyError as error:
+        _fail_policy_error(error)
     result.summary = build_summary(result.findings)
     rendered = _render_scan_result(result, format)
     _write_or_echo(rendered, output_path)
-    effective_fail_on = policy_fail_on(fail_on, loaded_policy)
     if should_fail(result.summary.max_severity, effective_fail_on):
         raise typer.Exit(1)
 

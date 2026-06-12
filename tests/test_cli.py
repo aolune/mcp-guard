@@ -47,6 +47,26 @@ def test_scan_fail_on_high_exits_nonzero():
     assert result.exit_code == 1
 
 
+def test_scan_rejects_unknown_fail_on():
+    result = runner.invoke(
+        app,
+        ["scan", "examples/poisoned_tool_manifest.json", "--fail-on", "severe"],
+    )
+    assert result.exit_code == 2
+    assert "Policy error: Unsupported fail_on: severe" in result.stderr
+
+
+def test_scan_rejects_invalid_policy(tmp_path):
+    policy = tmp_path / "policy.yaml"
+    policy.write_text("version: 1\nrequire_approval_levels:\n  - L9\n", encoding="utf-8")
+    result = runner.invoke(
+        app,
+        ["scan", "examples/poisoned_tool_manifest.json", "--policy", str(policy)],
+    )
+    assert result.exit_code == 2
+    assert "Policy error: Unsupported require_approval_levels: L9" in result.stderr
+
+
 def test_scan_rejects_unknown_format():
     result = runner.invoke(
         app,

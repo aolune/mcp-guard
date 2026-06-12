@@ -1,4 +1,6 @@
-from mcp_guard.policy import apply_policy, policy_fail_on, should_fail
+import pytest
+
+from mcp_guard.policy import PolicyError, apply_policy, policy_fail_on, should_fail, validate_policy
 from mcp_guard.scanner import scan_path
 from mcp_guard.summary import build_summary
 
@@ -24,3 +26,17 @@ def test_policy_denies_capability():
     policy = {"deny_capabilities": ["file_read"]}
     filtered = apply_policy(result.findings, policy)
     assert any(f.capability == "file_read" and f.policy_action == "deny" for f in filtered)
+
+
+def test_invalid_policy_values_raise_clear_errors():
+    with pytest.raises(PolicyError, match="Unsupported fail_on"):
+        validate_policy({"fail_on": "severe"})
+
+    with pytest.raises(PolicyError, match="must be a list of strings"):
+        validate_policy({"deny_capabilities": "shell_exec"})
+
+    with pytest.raises(PolicyError, match="Unsupported require_approval_levels"):
+        validate_policy({"require_approval_levels": ["L9"]})
+
+    with pytest.raises(PolicyError, match="Unsupported fail_on"):
+        should_fail("high", "severe")

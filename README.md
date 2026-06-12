@@ -121,6 +121,8 @@ require_approval_levels:
   - L4
 ```
 
+Invalid `fail_on` severities or `require_approval_levels` are rejected before the scan report is emitted.
+
 ## GitHub Actions and SARIF
 
 The included CI workflow runs tests, lints the project, generates JSON/SARIF mcp-guard reports, runs the fixture benchmark matrix, uploads the reports as artifacts, and uploads SARIF to GitHub Code Scanning when repository permissions allow it.
