@@ -4,6 +4,11 @@ from pathlib import Path
 
 import typer
 
+from mcp_guard.benchmark import (
+    render_benchmark_json,
+    render_benchmark_markdown,
+    run_benchmark,
+)
 from mcp_guard.diff import diff_tools
 from mcp_guard.hashing import canonical_hash, render_baseline
 from mcp_guard.models import ScanResult
@@ -90,3 +95,19 @@ def explain(
         typer.echo(render_rules_json(rules))
     else:
         typer.echo(render_rules_markdown(rules))
+
+
+@app.command()
+def benchmark(
+    matrix: str = typer.Argument("examples/fixture_matrix.yaml"),
+    format: str = typer.Option("markdown", "--format"),
+    out: str | None = typer.Option(None, "--out"),
+):
+    report = run_benchmark(matrix)
+    rendered = render_benchmark_json(report) if format == "json" else render_benchmark_markdown(report)
+    if out:
+        Path(out).write_text(rendered, encoding="utf-8")
+    else:
+        typer.echo(rendered)
+    if report["failed"]:
+        raise typer.Exit(1)

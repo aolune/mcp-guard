@@ -66,6 +66,7 @@ python -m mcp_guard hash examples/poisoned_tool_manifest.json --out baseline.jso
 python -m mcp_guard diff baseline.json examples/rug_pull_changed.json
 python -m mcp_guard init-policy --out .mcp-guard/policy.yaml
 python -m mcp_guard explain MCPG-SCHEMA-004
+python -m mcp_guard benchmark examples/fixture_matrix.yaml
 ```
 
 ## Example fixtures
@@ -82,6 +83,15 @@ python -m mcp_guard explain MCPG-SCHEMA-004
 | `examples/network_exfil_tool_manifest.json` | Free-form webhook upload. |
 | `examples/overbroad_schema_manifest.json` | Overbroad schema shape. |
 | `examples/rug_pull_baseline.json` and `examples/rug_pull_changed.json` | Tool definition drift. |
+
+Run the fixture matrix as a lightweight benchmark:
+
+```powershell
+python -m mcp_guard benchmark examples/fixture_matrix.yaml
+python -m mcp_guard benchmark examples/fixture_matrix.yaml --format json --out benchmark.json
+```
+
+The benchmark verifies that each fixture produces the expected gate, risk level, severity, and rule IDs.
 
 ## Risk levels
 

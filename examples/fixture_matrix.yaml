@@ -1,0 +1,80 @@
+version: 1
+fixtures:
+  - name: safe readonly docs
+    target: examples/safe_readonly_docs_manifest.json
+    expect:
+      gate: pass
+      risk_level: L0
+      max_severity: info
+      contains_findings: []
+
+  - name: dangerous stdio config
+    target: examples/dangerous_stdio_config.json
+    expect:
+      gate: fail
+      risk_level: L4
+      max_severity: critical
+      contains_findings:
+        - MCPG-STDIO-003
+        - MCPG-SECRET-001
+        - MCPG-NET-002
+
+  - name: credential env config
+    target: examples/credential_env_mcp_config.json
+    expect:
+      gate: fail
+      risk_level: L4
+      max_severity: high
+      contains_findings:
+        - MCPG-SECRET-001
+        - MCPG-SECRET-002
+
+  - name: poisoned tool metadata
+    target: examples/poisoned_tool_manifest.json
+    expect:
+      gate: fail
+      risk_level: L4
+      max_severity: critical
+      contains_findings:
+        - MCPG-INJ-001
+        - MCPG-SCHEMA-004
+        - MCPG-CAP-004
+
+  - name: arbitrary file read
+    target: examples/arbitrary_file_read_manifest.json
+    expect:
+      gate: fail
+      risk_level: L3
+      max_severity: high
+      contains_findings:
+        - MCPG-SCHEMA-002
+
+  - name: network exfil tool
+    target: examples/network_exfil_tool_manifest.json
+    expect:
+      gate: fail
+      risk_level: L3
+      max_severity: high
+      contains_findings:
+        - MCPG-SCHEMA-003
+
+  - name: overbroad schema
+    target: examples/overbroad_schema_manifest.json
+    expect:
+      gate: warn
+      risk_level: L2
+      max_severity: medium
+      contains_findings:
+        - MCPG-SCHEMA-001
+
+  - name: rug pull drift
+    baseline: examples/rug_pull_baseline.json
+    target: examples/rug_pull_changed.json
+    expect:
+      gate: fail
+      risk_level: L3
+      max_severity: high
+      contains_findings:
+        - MCPG-SC-001
+        - MCPG-SC-002
+        - MCPG-SC-003
