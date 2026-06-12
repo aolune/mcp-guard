@@ -62,8 +62,8 @@ python -m mcp_guard scan examples/poisoned_tool_manifest.json --format json
 python -m mcp_guard scan examples/poisoned_tool_manifest.json --format sarif
 python -m mcp_guard scan examples/poisoned_tool_manifest.json --out report.md
 python -m mcp_guard scan examples/poisoned_tool_manifest.json --policy examples/policy_example.yaml --fail-on high
-python -m mcp_guard hash examples/poisoned_tool_manifest.json
-python -m mcp_guard diff examples/rug_pull_baseline.json examples/rug_pull_changed.json
+python -m mcp_guard hash examples/poisoned_tool_manifest.json --out baseline.json
+python -m mcp_guard diff baseline.json examples/rug_pull_changed.json
 python -m mcp_guard init-policy --out .mcp-guard/policy.yaml
 python -m mcp_guard explain MCPG-SCHEMA-004
 ```
@@ -129,6 +129,22 @@ For CI admission gates:
 ```powershell
 python -m mcp_guard scan . --policy examples/policy_example.yaml --fail-on high
 ```
+
+## Baseline drift detection
+
+Generate a baseline without executing the MCP server:
+
+```powershell
+python -m mcp_guard hash examples/rug_pull_baseline.json --out baseline.json
+```
+
+Compare a later manifest or config against that baseline:
+
+```powershell
+python -m mcp_guard diff baseline.json examples/rug_pull_changed.json
+```
+
+The baseline stores hashes for descriptions, schemas, server launch definitions, env key names, capabilities, and risk levels. It does not store secret environment values.
 
 ## OWASP MCP mapping
 

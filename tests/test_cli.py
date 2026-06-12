@@ -74,3 +74,12 @@ def test_explain_unknown_rule_fails():
     result = runner.invoke(app, ["explain", "MCPG-NOPE-999"])
     assert result.exit_code == 1
     assert "Unknown rule id" in result.stderr
+
+
+def test_hash_out_writes_baseline(tmp_path):
+    output = tmp_path / "baseline.json"
+    result = runner.invoke(app, ["hash", "examples/poisoned_tool_manifest.json", "--out", str(output)])
+    assert result.exit_code == 0
+    baseline = output.read_text(encoding="utf-8")
+    assert '"kind": "mcp-guard-baseline"' in baseline
+    assert '"risk_level": "L4"' in baseline

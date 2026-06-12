@@ -187,6 +187,36 @@ _STATIC_RULES: dict[str, dict[str, Any]] = {
         "description": "A previously approved tool is missing from the current manifest.",
         "recommendation": "Review removal impact and trust-chain implications.",
     },
+    "MCPG-SC-005": {
+        "title": "server launch definition changed",
+        "category": "supply_chain",
+        "capability": "supply_chain",
+        "severity": "high",
+        "risk_level": "L3",
+        "policy_action": "require_approval",
+        "description": "Server command, args, env keys, transport, or URL changed after baseline.",
+        "recommendation": "Require security re-review before trusting the updated launch config.",
+    },
+    "MCPG-SC-006": {
+        "title": "server launch definition added",
+        "category": "supply_chain",
+        "capability": "supply_chain",
+        "severity": "medium",
+        "risk_level": "L3",
+        "policy_action": "require_approval",
+        "description": "A new MCP server launch configuration was introduced after baseline.",
+        "recommendation": "Run admission review for the newly added server.",
+    },
+    "MCPG-SC-007": {
+        "title": "server launch definition removed",
+        "category": "supply_chain",
+        "capability": "supply_chain",
+        "severity": "low",
+        "risk_level": "L1",
+        "policy_action": "allow",
+        "description": "An MCP server launch configuration was removed after baseline.",
+        "recommendation": "Review removal impact and update approval records.",
+    },
 }
 
 

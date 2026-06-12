@@ -1,6 +1,10 @@
+import json
+
 from mcp_guard.hashing import canonical_hash
 from mcp_guard.diff import diff_tools
+from mcp_guard.hashing import build_baseline, render_baseline
 from mcp_guard.summary import build_summary
+
 
 def test_hash_and_diff():
     assert canonical_hash("examples/rug_pull_baseline.json")
@@ -19,3 +23,50 @@ def test_diff_marks_added_capability():
     assert escalation.policy_action == "require_approval"
     assert escalation.owasp
     assert build_summary(findings).egress_review_required is True
+
+
+def test_baseline_masks_secret_values():
+    rendered = render_baseline("examples/credential_env_mcp_config.json")
+    assert "ghp_exampletoken123456" not in rendered
+    baseline = json.loads(rendered)
+    assert baseline["kind"] == "mcp-guard-baseline"
+    assert baseline["servers"][0]["env_keys"] == ["GITHUB_TOKEN"]
+
+
+def test_diff_accepts_baseline_json(tmp_path):
+    baseline_path = tmp_path / "baseline.json"
+    baseline_path.write_text(render_baseline("examples/rug_pull_baseline.json"), encoding="utf-8")
+    findings = diff_tools(str(baseline_path), "examples/rug_pull_changed.json")
+    ids = {finding.id for finding in findings}
+    assert "MCPG-SC-001" in ids
+    assert "MCPG-SC-002" in ids
+    assert "MCPG-SC-003" in ids
+
+
+def test_diff_detects_server_launch_drift(tmp_path):
+    baseline_path = tmp_path / "baseline.json"
+    current_path = tmp_path / "changed_config.json"
+    baseline_path.write_text(render_baseline("examples/safe_mcp_config.json"), encoding="utf-8")
+    current_path.write_text(
+        json.dumps(
+            {
+                "mcpServers": {
+                    "safe": {
+                        "transport": "http",
+                        "url": "http://localhost:8080/mcp",
+                    }
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    ids = {finding.id for finding in diff_tools(str(baseline_path), str(current_path))}
+    assert "MCPG-SC-005" in ids
+
+
+def test_build_baseline_includes_tool_risk_metadata():
+    baseline = build_baseline("examples/poisoned_tool_manifest.json")
+    tool = baseline["tools"][0]
+    assert tool["risk_level"] == "L4"
+    assert tool["risk_score"] >= 75
+    assert "shell_exec" in tool["capabilities"]

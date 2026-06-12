@@ -3,11 +3,91 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+from typing import Any
 
-from mcp_guard.parsers import load_documents
+from mcp_guard.parsers import extract_mcp_servers, extract_tools, load_documents
+from mcp_guard.risk import max_risk, max_risk_score
+from mcp_guard.rules import scan_tool
+from mcp_guard.standards import annotate_findings
+
+BASELINE_KIND = "mcp-guard-baseline"
+BASELINE_VERSION = 1
+
+
+def _stable_json(value: Any) -> str:
+    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+
+
+def _hash_value(value: Any) -> str:
+    return hashlib.sha256(_stable_json(value).encode()).hexdigest()
 
 
 def canonical_hash(path: str) -> str:
     docs = [d for _, d in load_documents(Path(path))]
-    payload = json.dumps(docs, sort_keys=True, separators=(",", ":"))
-    return hashlib.sha256(payload.encode()).hexdigest()
+    return _hash_value(docs)
+
+
+def build_baseline(path: str) -> dict[str, Any]:
+    baseline_path = Path(path)
+    servers = []
+    tools = []
+    docs = []
+    for file, data in load_documents(baseline_path):
+        docs.append(data)
+        for name, server in extract_mcp_servers(data).items():
+            env = server.get("env", {})
+            env_keys = sorted(str(key) for key in env) if isinstance(env, dict) else []
+            servers.append(
+                {
+                    "name": name,
+                    "source": str(file),
+                    "command_hash": _hash_value(server.get("command", "")),
+                    "args_hash": _hash_value(server.get("args", [])),
+                    "env_keys": env_keys,
+                    "env_keys_hash": _hash_value(env_keys),
+                    "url_hash": _hash_value(server.get("url", "")),
+                    "definition_hash": _hash_value(
+                        {
+                            "command": server.get("command", ""),
+                            "args": server.get("args", []),
+                            "env_keys": env_keys,
+                            "transport": server.get("transport", ""),
+                            "url": server.get("url", ""),
+                        }
+                    ),
+                }
+            )
+        for tool in extract_tools(data):
+            findings = annotate_findings(scan_tool(tool, str(file)))
+            tools.append(
+                {
+                    "name": tool.name,
+                    "source": str(file),
+                    "description_hash": _hash_value(tool.description),
+                    "schema_hash": _hash_value(tool.inputSchema),
+                    "definition_hash": _hash_value(tool.model_dump()),
+                    "capabilities": sorted(
+                        {finding.capability for finding in findings if finding.capability != "unknown"}
+                    ),
+                    "risk_level": max_risk(findings),
+                    "risk_score": max_risk_score(findings),
+                    "finding_ids": sorted({finding.id for finding in findings}),
+                }
+            )
+
+    return {
+        "kind": BASELINE_KIND,
+        "version": BASELINE_VERSION,
+        "target": path,
+        "documents_hash": _hash_value(docs),
+        "servers": sorted(servers, key=lambda item: (item["source"], item["name"])),
+        "tools": sorted(tools, key=lambda item: (item["source"], item["name"])),
+    }
+
+
+def render_baseline(path: str) -> str:
+    return json.dumps(build_baseline(path), indent=2)
+
+
+def is_baseline_document(data: dict[str, Any]) -> bool:
+    return data.get("kind") == BASELINE_KIND and data.get("version") == BASELINE_VERSION

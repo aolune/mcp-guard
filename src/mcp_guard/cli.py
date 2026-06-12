@@ -5,7 +5,7 @@ from pathlib import Path
 import typer
 
 from mcp_guard.diff import diff_tools
-from mcp_guard.hashing import canonical_hash
+from mcp_guard.hashing import canonical_hash, render_baseline
 from mcp_guard.models import ScanResult
 from mcp_guard.policy import apply_policy, load_policy, policy_fail_on, render_default_policy, should_fail
 from mcp_guard.reports import render_json, render_markdown, render_sarif
@@ -44,8 +44,14 @@ def scan(
 
 
 @app.command("hash")
-def hash_cmd(path: str):
-    typer.echo(canonical_hash(path))
+def hash_cmd(
+    path: str,
+    out: str | None = typer.Option(None, "--out"),
+):
+    if out:
+        Path(out).write_text(render_baseline(path), encoding="utf-8")
+    else:
+        typer.echo(canonical_hash(path))
 
 
 @app.command()
