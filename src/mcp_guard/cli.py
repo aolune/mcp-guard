@@ -20,6 +20,32 @@ from mcp_guard.summary import build_summary
 
 app = typer.Typer(help="mcp-guard static security scanner")
 
+REPORT_FORMATS = {"markdown", "json", "sarif"}
+TEXT_FORMATS = {"markdown", "json"}
+
+
+def _fail_unsupported_format(format: str, allowed: set[str]) -> None:
+    supported = ", ".join(sorted(allowed))
+    typer.echo(f"Unsupported format: {format}. Supported formats: {supported}", err=True)
+    raise typer.Exit(2)
+
+
+def _render_scan_result(result: ScanResult, format: str) -> str:
+    if format not in REPORT_FORMATS:
+        _fail_unsupported_format(format, REPORT_FORMATS)
+    if format == "json":
+        return render_json(result)
+    if format == "sarif":
+        return render_sarif(result)
+    return render_markdown(result)
+
+
+def _write_or_echo(rendered: str, out: str | None) -> None:
+    if out:
+        Path(out).write_text(rendered, encoding="utf-8")
+    else:
+        typer.echo(rendered)
+
 
 @app.command()
 def scan(
@@ -33,16 +59,8 @@ def scan(
     loaded_policy = load_policy(policy)
     result.findings = apply_policy(result.findings, loaded_policy)
     result.summary = build_summary(result.findings)
-    if format == "json":
-        rendered = render_json(result)
-    elif format == "sarif":
-        rendered = render_sarif(result)
-    else:
-        rendered = render_markdown(result)
-    if output_path:
-        Path(output_path).write_text(rendered, encoding="utf-8")
-    else:
-        typer.echo(rendered)
+    rendered = _render_scan_result(result, format)
+    _write_or_echo(rendered, output_path)
     effective_fail_on = policy_fail_on(fail_on, loaded_policy)
     if should_fail(result.summary.max_severity, effective_fail_on):
         raise typer.Exit(1)
@@ -60,10 +78,16 @@ def hash_cmd(
 
 
 @app.command()
-def diff(baseline: str, current: str):
+def diff(
+    baseline: str,
+    current: str,
+    format: str = typer.Option("markdown", "--format"),
+    out: str | None = typer.Option(None, "--out"),
+):
     findings = diff_tools(baseline, current)
     result = ScanResult(target=f"{baseline} -> {current}", findings=findings, summary=build_summary(findings))
-    typer.echo(render_markdown(result))
+    rendered = _render_scan_result(result, format)
+    _write_or_echo(rendered, out)
 
 
 @app.command("init-policy")
@@ -91,6 +115,8 @@ def explain(
     else:
         rules = all_rules()
 
+    if format not in TEXT_FORMATS:
+        _fail_unsupported_format(format, TEXT_FORMATS)
     if format == "json":
         typer.echo(render_rules_json(rules))
     else:
@@ -104,10 +130,9 @@ def benchmark(
     out: str | None = typer.Option(None, "--out"),
 ):
     report = run_benchmark(matrix)
+    if format not in TEXT_FORMATS:
+        _fail_unsupported_format(format, TEXT_FORMATS)
     rendered = render_benchmark_json(report) if format == "json" else render_benchmark_markdown(report)
-    if out:
-        Path(out).write_text(rendered, encoding="utf-8")
-    else:
-        typer.echo(rendered)
+    _write_or_echo(rendered, out)
     if report["failed"]:
         raise typer.Exit(1)

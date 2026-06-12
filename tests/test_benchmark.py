@@ -32,6 +32,12 @@ def test_benchmark_cli_out_writes_report(tmp_path):
     assert "Failed: 0" in report
 
 
+def test_benchmark_cli_rejects_unknown_format():
+    result = runner.invoke(app, ["benchmark", "examples/fixture_matrix.yaml", "--format", "sarif"])
+    assert result.exit_code == 2
+    assert "Supported formats: json, markdown" in result.stderr
+
+
 def test_benchmark_cli_fails_on_unmet_expectation(tmp_path):
     matrix = tmp_path / "bad_matrix.yaml"
     matrix.write_text(

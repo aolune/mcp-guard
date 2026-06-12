@@ -47,6 +47,47 @@ def test_scan_fail_on_high_exits_nonzero():
     assert result.exit_code == 1
 
 
+def test_scan_rejects_unknown_format():
+    result = runner.invoke(
+        app,
+        ["scan", "examples/poisoned_tool_manifest.json", "--format", "xml"],
+    )
+    assert result.exit_code == 2
+    assert "Unsupported format: xml" in result.stderr
+
+
+def test_diff_json_and_sarif_out(tmp_path):
+    json_result = runner.invoke(
+        app,
+        [
+            "diff",
+            "examples/rug_pull_baseline.json",
+            "examples/rug_pull_changed.json",
+            "--format",
+            "json",
+        ],
+    )
+    assert json_result.exit_code == 0
+    assert '"id": "MCPG-SC-001"' in json_result.stdout
+    assert '"recommended_policy"' in json_result.stdout
+
+    output = tmp_path / "drift.sarif"
+    sarif_result = runner.invoke(
+        app,
+        [
+            "diff",
+            "examples/rug_pull_baseline.json",
+            "examples/rug_pull_changed.json",
+            "--format",
+            "sarif",
+            "--out",
+            str(output),
+        ],
+    )
+    assert sarif_result.exit_code == 0
+    assert '"ruleId": "MCPG-SC-001"' in output.read_text(encoding="utf-8")
+
+
 def test_init_policy_outputs_template(tmp_path):
     output = tmp_path / "policy.yaml"
     result = runner.invoke(app, ["init-policy", "--out", str(output)])

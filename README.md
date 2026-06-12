@@ -64,6 +64,7 @@ python -m mcp_guard scan examples/poisoned_tool_manifest.json --out report.md
 python -m mcp_guard scan examples/poisoned_tool_manifest.json --policy examples/policy_example.yaml --fail-on high
 python -m mcp_guard hash examples/poisoned_tool_manifest.json --out baseline.json
 python -m mcp_guard diff baseline.json examples/rug_pull_changed.json
+python -m mcp_guard diff baseline.json examples/rug_pull_changed.json --format json --out drift.json
 python -m mcp_guard init-policy --out .mcp-guard/policy.yaml
 python -m mcp_guard explain MCPG-SCHEMA-004
 python -m mcp_guard benchmark examples/fixture_matrix.yaml
@@ -152,6 +153,7 @@ Compare a later manifest or config against that baseline:
 
 ```powershell
 python -m mcp_guard diff baseline.json examples/rug_pull_changed.json
+python -m mcp_guard diff baseline.json examples/rug_pull_changed.json --format sarif --out drift.sarif
 ```
 
 The baseline stores hashes for descriptions, schemas, server launch definitions, env key names, capabilities, and risk levels. It does not store secret environment values.
