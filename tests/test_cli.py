@@ -54,3 +54,23 @@ def test_init_policy_outputs_template(tmp_path):
     policy = output.read_text(encoding="utf-8")
     assert "deny_capabilities" in policy
     assert "require_approval_levels" in policy
+
+
+def test_explain_rule_markdown():
+    result = runner.invoke(app, ["explain", "MCPG-SCHEMA-004"])
+    assert result.exit_code == 0
+    assert "dangerous command or code parameter" in result.stdout
+    assert "OWASP MCP:" in result.stdout
+
+
+def test_explain_all_rules_json():
+    result = runner.invoke(app, ["explain", "--format", "json"])
+    assert result.exit_code == 0
+    assert '"id": "MCPG-SCHEMA-004"' in result.stdout
+    assert '"owasp"' in result.stdout
+
+
+def test_explain_unknown_rule_fails():
+    result = runner.invoke(app, ["explain", "MCPG-NOPE-999"])
+    assert result.exit_code == 1
+    assert "Unknown rule id" in result.stderr

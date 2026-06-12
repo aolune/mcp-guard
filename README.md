@@ -65,6 +65,7 @@ python -m mcp_guard scan examples/poisoned_tool_manifest.json --policy examples/
 python -m mcp_guard hash examples/poisoned_tool_manifest.json
 python -m mcp_guard diff examples/rug_pull_baseline.json examples/rug_pull_changed.json
 python -m mcp_guard init-policy --out .mcp-guard/policy.yaml
+python -m mcp_guard explain MCPG-SCHEMA-004
 ```
 
 ## Example fixtures
@@ -142,6 +143,13 @@ mcp-guard findings include an `owasp` field and SARIF `tags` so reports can be g
 | `MCPG-INJ-*` | Tool Poisoning, Context Injection |
 | `MCPG-SC-*` | Supply Chain, Tool Poisoning |
 | `MCPG-NET-*` | Intent Flow Subversion, Context Over-Sharing |
+
+Use `explain` to inspect rule metadata:
+
+```powershell
+python -m mcp_guard explain MCPG-SCHEMA-004
+python -m mcp_guard explain --format json
+```
 
 ## Non-goals
 

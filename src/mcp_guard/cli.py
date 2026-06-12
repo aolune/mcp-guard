@@ -9,6 +9,7 @@ from mcp_guard.hashing import canonical_hash
 from mcp_guard.models import ScanResult
 from mcp_guard.policy import apply_policy, load_policy, policy_fail_on, render_default_policy, should_fail
 from mcp_guard.reports import render_json, render_markdown, render_sarif
+from mcp_guard.rules.catalog import all_rules, get_rule, render_rules_json, render_rules_markdown
 from mcp_guard.scanner import scan_path
 from mcp_guard.summary import build_summary
 
@@ -63,3 +64,23 @@ def init_policy(
         Path(out).write_text(policy_text, encoding="utf-8")
     else:
         typer.echo(policy_text)
+
+
+@app.command()
+def explain(
+    rule_id: str | None = typer.Argument(None),
+    format: str = typer.Option("markdown", "--format"),
+):
+    if rule_id:
+        rule = get_rule(rule_id)
+        if not rule:
+            typer.echo(f"Unknown rule id: {rule_id}", err=True)
+            raise typer.Exit(1)
+        rules = [rule]
+    else:
+        rules = all_rules()
+
+    if format == "json":
+        typer.echo(render_rules_json(rules))
+    else:
+        typer.echo(render_rules_markdown(rules))
