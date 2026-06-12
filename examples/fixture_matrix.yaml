@@ -49,6 +49,26 @@ fixtures:
       contains_findings:
         - MCPG-SCHEMA-002
 
+  - name: arbitrary file write
+    target: examples/arbitrary_file_write_manifest.json
+    expect:
+      gate: fail
+      risk_level: L3
+      max_severity: high
+      contains_findings:
+        - MCPG-CAP-003
+        - MCPG-SCHEMA-002
+
+  - name: dangerous shell tool
+    target: examples/dangerous_shell_tool_manifest.json
+    expect:
+      gate: fail
+      risk_level: L4
+      max_severity: critical
+      contains_findings:
+        - MCPG-CAP-001
+        - MCPG-SCHEMA-004
+
   - name: network exfil tool
     target: examples/network_exfil_tool_manifest.json
     expect:
